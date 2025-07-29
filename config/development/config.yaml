@@ -1,0 +1,157 @@
+# Database configuration
+database:
+  host: localhost
+  port: 5432
+  name: basemap_dev
+  user: basemap_user
+  password: basemap_password
+  schema: basemap
+  pool_size: 10
+  max_overflow: 20
+  pool_timeout: 30
+
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  password: null
+  socket_timeout: 5
+  connection_pool_max_connections: 50
+
+# AWS configuration (using LocalStack for development)
+aws:
+  region: us-west-2
+  use_aws: false
+  localstack:
+    enabled: true
+    endpoint_url: http://localhost:4566
+  s3:
+    bucket_name: basemap-dev-bucket
+    tiles_prefix: tiles/
+    data_prefix: data/
+  emr:
+    cluster_name: basemap-dev-cluster
+    instance_type: m5.xlarge
+    instance_count: 2
+    release_label: emr-6.15.0
+
+# MinIO configuration (S3-compatible for local development)
+minio:
+  endpoint: http://localhost:9000
+  access_key: minioadmin
+  secret_key: minioadmin123
+  bucket_name: basemap-dev
+  secure: false
+
+# Processing configuration
+processing:
+  chunk_size: 1000
+  max_workers: 4
+  memory_limit_mb: 2048
+  temp_dir: /tmp/basemap
+  enable_caching: true
+  cache_ttl_hours: 24
+
+# OSM data configuration
+osm:
+  data_sources:
+    - name: planet
+      url: https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+      format: pbf
+    - name: extracts
+      url: https://download.geofabrik.de/
+      format: pbf
+  chunk_size: 10000
+  memory_limit_mb: 1024
+  poi_tags:
+    - amenity
+    - shop
+    - tourism
+    - leisure
+    - historic
+  road_tags:
+    - highway
+    - railway
+  building_tags:
+    - building
+    - addr:housenumber
+
+# Tile generation configuration
+tiles:
+  formats:
+    - mvt
+    - geojson
+  zoom_levels:
+    min: 0
+    max: 18
+  tile_size: 512
+  buffer_size: 64
+  simplification_tolerance: 1.0
+  max_features_per_tile: 1000
+  output_dir: ./data/tiles
+
+# Monitoring configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    pushgateway_url: http://localhost:9091
+  cloudwatch:
+    enabled: false
+    namespace: BasemapProcessing/Dev
+    region: us-west-2
+  metrics_retention_days: 7
+  alert_thresholds:
+    processing_duration_seconds: 3600
+    error_rate_percent: 5.0
+    data_freshness_hours: 24
+
+# Logging configuration
+logging:
+  level: DEBUG
+  format: json
+  handlers:
+    - console
+    - file
+  file_path: ./logs/basemap.log
+  max_file_size_mb: 100
+  backup_count: 5
+
+# Airflow configuration
+airflow:
+  dag_dir: ./airflow/dags
+  plugins_dir: ./airflow/plugins
+  logs_dir: ./airflow/logs
+  default_args:
+    owner: basemap-team
+    depends_on_past: false
+    start_date: "2024-01-01"
+    email_on_failure: false
+    email_on_retry: false
+    retries: 2
+    retry_delay_minutes: 5
+  schedule_interval: "@daily"
+  max_active_runs: 1
+  catchup: false
+
+# Development tools
+development:
+  jupyter:
+    enabled: true
+    port: 8888
+    token: basemap-dev-token
+  debug_mode: true
+  hot_reload: true
+  profiling_enabled: true
+  test_data_size: small
+
+# Security configuration
+security:
+  encryption_key: dev-encryption-key-change-in-production
+  jwt_secret: dev-jwt-secret-change-in-production
+  api_rate_limit: 1000
+  cors_origins:
+    - http://localhost:3000
+    - http://localhost:8080
+    - http://localhost:8888

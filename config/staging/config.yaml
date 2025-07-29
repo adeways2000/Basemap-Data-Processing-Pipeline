@@ -1,0 +1,173 @@
+environment: staging
+
+# Database configuration
+database:
+  host: basemap-staging-db.cluster-xyz.us-west-2.rds.amazonaws.com
+  port: 5432
+  name: basemap_staging
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  schema: basemap
+  pool_size: 20
+  max_overflow: 40
+  pool_timeout: 30
+  ssl_mode: require
+
+# Redis configuration
+redis:
+  host: basemap-staging-redis.abc123.cache.amazonaws.com
+  port: 6379
+  db: 0
+  password: ${REDIS_PASSWORD}
+  socket_timeout: 5
+  connection_pool_max_connections: 100
+  ssl: true
+
+# AWS configuration
+aws:
+  region: us-west-2
+  use_aws: true
+  s3:
+    bucket_name: basemap-staging-data
+    tiles_prefix: tiles/
+    data_prefix: data/
+  emr:
+    cluster_name: basemap-staging-cluster
+    instance_type: m5.2xlarge
+    instance_count: 4
+    release_label: emr-6.15.0
+    subnet_id: subnet-staging123
+    security_groups:
+      - sg-staging456
+    service_role: EMR_DefaultRole
+    instance_profile: EMR_EC2_DefaultRole
+  cloudwatch:
+    log_group: /aws/emr/basemap-staging
+
+# Processing configuration
+processing:
+  chunk_size: 5000
+  max_workers: 8
+  memory_limit_mb: 8192
+  temp_dir: /tmp/basemap
+  enable_caching: true
+  cache_ttl_hours: 12
+
+# OSM data configuration
+osm:
+  data_sources:
+    - name: planet
+      url: https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+      format: pbf
+    - name: extracts
+      url: https://download.geofabrik.de/
+      format: pbf
+  chunk_size: 50000
+  memory_limit_mb: 4096
+  poi_tags:
+    - amenity
+    - shop
+    - tourism
+    - leisure
+    - historic
+    - office
+    - craft
+  road_tags:
+    - highway
+    - railway
+    - waterway
+  building_tags:
+    - building
+    - addr:housenumber
+    - addr:street
+
+# Tile generation configuration
+tiles:
+  formats:
+    - mvt
+  zoom_levels:
+    min: 0
+    max: 16
+  tile_size: 512
+  buffer_size: 64
+  simplification_tolerance: 0.5
+  max_features_per_tile: 2000
+  output_dir: s3://basemap-staging-data/tiles/
+
+# Monitoring configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    pushgateway_url: http://prometheus-pushgateway:9091
+  cloudwatch:
+    enabled: true
+    namespace: BasemapProcessing/Staging
+    region: us-west-2
+  metrics_retention_days: 30
+  alert_thresholds:
+    processing_duration_seconds: 1800
+    error_rate_percent: 2.0
+    data_freshness_hours: 12
+  sns_topic_arn: arn:aws:sns:us-west-2:123456789012:basemap-staging-alerts
+  slack_webhook_url: ${SLACK_WEBHOOK_URL}
+
+# Logging configuration
+logging:
+  level: INFO
+  format: json
+  handlers:
+    - console
+    - cloudwatch
+  cloudwatch_log_group: /aws/basemap/staging
+  cloudwatch_log_stream: application
+  max_file_size_mb: 100
+  backup_count: 10
+
+# Airflow configuration
+airflow:
+  dag_dir: ./airflow/dags
+  plugins_dir: ./airflow/plugins
+  logs_dir: s3://basemap-staging-data/airflow-logs/
+  default_args:
+    owner: basemap-team
+    depends_on_past: false
+    start_date: "2024-01-01"
+    email_on_failure: true
+    email_on_retry: false
+    retries: 3
+    retry_delay_minutes: 10
+    email:
+      - basemap-team@company.com
+  schedule_interval: "0 2 * * *"  # Daily at 2 AM UTC
+  max_active_runs: 1
+  catchup: false
+  sla_miss_callback: true
+
+# Security configuration
+security:
+  encryption_key: ${ENCRYPTION_KEY}
+  jwt_secret: ${JWT_SECRET}
+  api_rate_limit: 500
+  cors_origins:
+    - https://staging-basemap.company.com
+  vpc_id: vpc-staging123
+  subnet_ids:
+    - subnet-staging123
+    - subnet-staging456
+  security_group_ids:
+    - sg-staging789
+
+# Performance tuning
+performance:
+  spark:
+    executor_memory: 4g
+    executor_cores: 2
+    driver_memory: 2g
+    max_executors: 10
+    dynamic_allocation: true
+  postgres:
+    shared_preload_libraries: pg_stat_statements
+    max_connections: 200
+    shared_buffers: 256MB
+    effective_cache_size: 1GB

@@ -1,0 +1,59 @@
+FROM jupyter/scipy-notebook:python-3.11
+
+USER root
+
+# Install system dependencies for geospatial processing
+RUN apt-get update && apt-get install -y \
+    libgdal-dev \
+    gdal-bin \
+    libproj-dev \
+    proj-data \
+    proj-bin \
+    libgeos-dev \
+    libspatialite7 \
+    libspatialite-dev \
+    spatialite-bin \
+    git \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+USER $NB_UID
+
+# Install Python packages for geospatial data science
+RUN pip install --no-cache-dir \
+    geopandas \
+    shapely \
+    fiona \
+    rasterio \
+    pyproj \
+    folium \
+    contextily \
+    osmnx \
+    movingpandas \
+    h3 \
+    keplergl \
+    pydeck \
+    plotly \
+    dash \
+    streamlit \
+    apache-airflow \
+    psycopg2-binary \
+    sqlalchemy \
+    boto3 \
+    redis \
+    prometheus-client \
+    structlog
+
+# Install Jupyter extensions
+RUN pip install --no-cache-dir \
+    jupyterlab-git \
+    jupyterlab-variableinspector \
+    jupyterlab-drawio \
+    ipywidgets
+
+# Enable Jupyter extensions
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager
+
+# Set working directory
+WORKDIR /home/jovyan/work

@@ -1,0 +1,254 @@
+environment: production
+
+# Database configuration
+database:
+  host: basemap-prod-db.cluster-xyz.us-west-2.rds.amazonaws.com
+  port: 5432
+  name: basemap_production
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  schema: basemap
+  pool_size: 50
+  max_overflow: 100
+  pool_timeout: 30
+  ssl_mode: require
+  read_replicas:
+    - host: basemap-prod-db-ro-1.cluster-xyz.us-west-2.rds.amazonaws.com
+    - host: basemap-prod-db-ro-2.cluster-xyz.us-west-2.rds.amazonaws.com
+
+# Redis configuration
+redis:
+  cluster_enabled: true
+  nodes:
+    - host: basemap-prod-redis-001.abc123.cache.amazonaws.com
+      port: 6379
+    - host: basemap-prod-redis-002.abc123.cache.amazonaws.com
+      port: 6379
+    - host: basemap-prod-redis-003.abc123.cache.amazonaws.com
+      port: 6379
+  password: ${REDIS_PASSWORD}
+  socket_timeout: 5
+  connection_pool_max_connections: 200
+  ssl: true
+
+# AWS configuration
+aws:
+  region: us-west-2
+  use_aws: true
+  s3:
+    bucket_name: basemap-production-data
+    tiles_prefix: tiles/
+    data_prefix: data/
+    cdn_distribution_id: E1234567890ABC
+  emr:
+    cluster_name: basemap-production-cluster
+    instance_type: m5.4xlarge
+    instance_count: 20
+    release_label: emr-6.15.0
+    subnet_id: subnet-prod123
+    security_groups:
+      - sg-prod456
+    service_role: EMR_DefaultRole
+    instance_profile: EMR_EC2_DefaultRole
+    auto_scaling:
+      min_capacity: 5
+      max_capacity: 50
+      scale_out_cooldown: 300
+      scale_in_cooldown: 300
+  cloudwatch:
+    log_group: /aws/emr/basemap-production
+    retention_days: 90
+
+# Processing configuration
+processing:
+  chunk_size: 10000
+  max_workers: 16
+  memory_limit_mb: 16384
+  temp_dir: /tmp/basemap
+  enable_caching: true
+  cache_ttl_hours: 6
+  parallel_processing: true
+  batch_size: 100000
+
+# OSM data configuration
+osm:
+  data_sources:
+    - name: planet
+      url: https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+      format: pbf
+      priority: 1
+    - name: daily_diffs
+      url: https://planet.openstreetmap.org/replication/day/
+      format: osc
+      priority: 2
+  chunk_size: 100000
+  memory_limit_mb: 8192
+  poi_tags:
+    - amenity
+    - shop
+    - tourism
+    - leisure
+    - historic
+    - office
+    - craft
+    - healthcare
+    - education
+  road_tags:
+    - highway
+    - railway
+    - waterway
+    - aeroway
+  building_tags:
+    - building
+    - addr:housenumber
+    - addr:street
+    - addr:city
+    - addr:postcode
+
+# Tile generation configuration
+tiles:
+  formats:
+    - mvt
+  zoom_levels:
+    min: 0
+    max: 18
+  tile_size: 512
+  buffer_size: 64
+  simplification_tolerance: 0.25
+  max_features_per_tile: 5000
+  output_dir: s3://basemap-production-data/tiles/
+  cdn_base_url: https://tiles.company.com
+  cache_control: public, max-age=3600
+  compression: gzip
+
+# Monitoring configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    pushgateway_url: http://prometheus-pushgateway:9091
+    scrape_interval: 15s
+    retention: 15d
+  cloudwatch:
+    enabled: true
+    namespace: BasemapProcessing/Production
+    region: us-west-2
+    detailed_monitoring: true
+  metrics_retention_days: 90
+  alert_thresholds:
+    processing_duration_seconds: 900
+    error_rate_percent: 1.0
+    data_freshness_hours: 6
+    tile_generation_rate: 1000
+    memory_usage_percent: 80
+    cpu_usage_percent: 75
+  sns_topic_arn: arn:aws:sns:us-west-2:123456789012:basemap-production-alerts
+  pagerduty_integration_key: ${PAGERDUTY_INTEGRATION_KEY}
+  slack_webhook_url: ${SLACK_WEBHOOK_URL}
+
+# Logging configuration
+logging:
+  level: INFO
+  format: json
+  handlers:
+    - console
+    - cloudwatch
+    - s3
+  cloudwatch_log_group: /aws/basemap/production
+  cloudwatch_log_stream: application
+  s3_log_bucket: basemap-production-logs
+  log_retention_days: 365
+  structured_logging: true
+  correlation_id_enabled: true
+
+# Airflow configuration
+airflow:
+  dag_dir: ./airflow/dags
+  plugins_dir: ./airflow/plugins
+  logs_dir: s3://basemap-production-data/airflow-logs/
+  default_args:
+    owner: basemap-team
+    depends_on_past: false
+    start_date: "2024-01-01"
+    email_on_failure: true
+    email_on_retry: false
+    retries: 5
+    retry_delay_minutes: 15
+    retry_exponential_backoff: true
+    max_retry_delay_minutes: 120
+    email:
+      - basemap-team@company.com
+      - ops-team@company.com
+  schedule_interval: "0 1 * * *"  # Daily at 1 AM UTC
+  max_active_runs: 1
+  catchup: false
+  sla_miss_callback: true
+  task_timeout_minutes: 360
+  dagbag_import_timeout: 30
+
+# Security configuration
+security:
+  encryption_key: ${ENCRYPTION_KEY}
+  jwt_secret: ${JWT_SECRET}
+  api_rate_limit: 1000
+  cors_origins:
+    - https://basemap.company.com
+    - https://api.company.com
+  vpc_id: vpc-prod123
+  subnet_ids:
+    - subnet-prod123
+    - subnet-prod456
+    - subnet-prod789
+  security_group_ids:
+    - sg-prod789
+  kms_key_id: arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012
+  secrets_manager:
+    enabled: true
+    secret_name: basemap/production/secrets
+
+# Performance tuning
+performance:
+  spark:
+    executor_memory: 8g
+    executor_cores: 4
+    driver_memory: 4g
+    max_executors: 50
+    dynamic_allocation: true
+    adaptive_query_execution: true
+    adaptive_skew_join: true
+    sql_adaptive_coalescePartitions: true
+  postgres:
+    shared_preload_libraries: pg_stat_statements,pg_hint_plan
+    max_connections: 500
+    shared_buffers: 2GB
+    effective_cache_size: 8GB
+    work_mem: 256MB
+    maintenance_work_mem: 1GB
+    checkpoint_completion_target: 0.9
+    wal_buffers: 64MB
+    default_statistics_target: 100
+
+# Disaster recovery
+disaster_recovery:
+  backup_enabled: true
+  backup_schedule: "0 3 * * *"  # Daily at 3 AM UTC
+  backup_retention_days: 30
+  cross_region_backup: true
+  backup_regions:
+    - us-east-1
+    - eu-west-1
+  point_in_time_recovery: true
+  automated_failover: true
+  rto_minutes: 15  # Recovery Time Objective
+  rpo_minutes: 5   # Recovery Point Objective
+
+# Compliance and governance
+compliance:
+  data_classification: internal
+  retention_policy_days: 2555  # 7 years
+  audit_logging: true
+  gdpr_compliance: true
+  data_lineage_tracking: true
+  access_logging: true
+  encryption_at_rest: true
+  encryption_in_transit: true
