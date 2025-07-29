@@ -1,0 +1,61 @@
+# Core Python dependencies
+pyspark==3.4.1
+apache-airflow==2.7.1
+apache-airflow-providers-amazon==8.6.0
+apache-airflow-providers-postgres==5.6.0
+
+# Geospatial libraries
+gdal==3.7.2
+fiona==1.9.4
+shapely==2.0.1
+rasterio==1.3.8
+geopandas==0.13.2
+pyproj==3.6.0
+rtree==1.0.1
+
+# Database and storage
+psycopg2-binary==2.9.7
+redis==4.6.0
+boto3==1.28.57
+s3fs==2023.6.0
+
+# Data processing and analysis
+pandas==2.0.3
+numpy==1.24.3
+scipy==1.11.2
+
+# Web framework and API
+flask==2.3.3
+flask-cors==4.0.0
+flask-restful==0.3.10
+gunicorn==21.2.0
+
+# Testing and development
+pytest==7.4.2
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+black==23.7.0
+flake8==6.0.0
+mypy==1.5.1
+
+# Monitoring and logging
+prometheus-client==0.17.1
+structlog==23.1.0
+
+# Configuration and utilities
+pydantic==2.3.0
+click==8.1.7
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Jupyter for development and exploration
+jupyter==1.0.0
+ipykernel==6.25.2
+matplotlib==3.7.2
+seaborn==0.12.2
+
+# Vector tile generation
+mapbox-vector-tile==2.0.1
+
+# Infrastructure as Code
+terraform==1.5.7
